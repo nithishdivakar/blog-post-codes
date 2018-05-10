@@ -1,25 +1,17 @@
 import keras
 from scipy import linalg
-from keras.datasets import mnist, cifar10, cifar100, imdb, fashion_mnist
+from keras.datasets import  cifar10
 import numpy as np
-from itertools import cycle,product
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle as dataset_shuffle
 from sklearn.metrics import log_loss
-import time
-
-
-
-
-
-
 
 
 def get_predictions(x,W):
   z = np.matmul(x,W.T)
-  # print(z)
-  # print(z,np.max(z,axis=-1,keepdims=True))
-  e = np.exp(z-np.max(z,axis=-1,keepdims=True)) # normalisation trick so that largest of z is 0
+  M = np.max(z,axis=-1,keepdims=True)
+  e = np.exp(z-M) # normalisation trick so 
+                  # that largest of z is 0
   sigma = e.sum(axis=-1,keepdims=True)
   s = e/sigma
   return s
@@ -31,7 +23,7 @@ def train_classifier(
   lr = 0.001, 
   total_iterations = 10000
 ):
-  # X_train,X_valid, Y_train,Y_valid = train_test_split(X,Y,test_size = 0.05,random_state=1634)
+
   feature_size = X_train.shape[1]
   class_size   = Y_train.shape[1] 
   
@@ -42,12 +34,8 @@ def train_classifier(
   def get_next_batch(X,Y,batch_size):
     sample_size = X.shape[0]
     while True:
-      # print(sample_size,batch_size)
-      # X,Y = dataset_shuffle(X,Y)
       for idx in range(0,sample_size,batch_size):
         yield X[idx:idx+batch_size], Y[idx:idx+batch_size]
-    
-      # print("[INFO] epoch completed")
 
   get_batch = get_next_batch(X_train, Y_train, batch_size)
   
@@ -61,13 +49,12 @@ def train_classifier(
   def loop_hook(no_iterations, W,l_b, log_freq=1000):
     if no_iterations %(log_freq) == 0:
       acc = test_model(W,X_valid,Y_valid) # Running Validation
-      print("[INFO] # = {:5d}  Valid Acc. = {:4.4f} Loss = {:e}".format(
+      print("[INFO] # = {:7d}  Valid Acc. = {:4.4f} Loss = {:e}".format(
         no_iterations,
         acc,
         l_b
       ))
-      
-
+  
   loop_index = 1
   W = initialise_weights()
   while True:
@@ -87,8 +74,6 @@ def test_model(W,X,Y):
   z = X.dot(W.T)
   pred = np.argmax(z,axis=1) 
   tru  = np.argmax(Y,axis=1)
-  #print(pred,Y)
-  # print(pred,tru)
   acc  = sum(pred==tru)/Y.shape[0]
   return acc
 
@@ -99,46 +84,6 @@ def class_to_one_hot(arr):
   one_hot[np.arange(n),arr] = 1.0
   return one_hot
 
-"""
-## MNIST
-print("[INFO] MNIST Dataset" )
-
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-X_train = x_train.reshape(x_train.shape[0],-1)
-X_test  = x_test.reshape(x_test.shape[0],-1)
-Y_train = class_to_one_hot(y_train)
-Y_test  = class_to_one_hot(y_test)
-
-w = train_classifier(X_train,Y_train) 
-
-acc  = test_model(w,X_train,Y_train)
-print("[INFO] train accuracy = {:0.4f}".format(acc))
-
-acc  = test_model(w,X_test,Y_test)
-print("[INFO] test accuracy = {:0.4f}".format(acc))
-#"""
-
-"""
-## Fashion-MNIST
-print("[INFO] Fashion MNIST Dataset" )
-
-(x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
-
-X_train = x_train.reshape(x_train.shape[0],-1)
-X_test  = x_test.reshape(x_test.shape[0],-1)
-Y_train = class_to_one_hot(y_train)
-Y_test  = class_to_one_hot(y_test)
-
-
-w = train_classifier(X_train,Y_train) 
-
-acc  = test_model(w,X_train,Y_train)
-print("[INFO] train accuracy = {:0.4f}".format(acc))
-
-acc  = test_model(w,X_test,Y_test)
-print("[INFO] test accuracy = {:0.4f}".format(acc))
-#
 
 #"""
 # Cifar10
@@ -187,26 +132,3 @@ print("[INFO] train accuracy = {:0.4f}".format(acc))
 
 acc  = test_model(W,X_test,Y_test)
 print("[INFO] test accuracy = {:0.4f}".format(acc))
-
-#"""
-# 
-# #"""
-# ## Cifar100
-# print("[INFO] CIFAR 10 Dataset" )
-# 
-# (x_train, y_train), (x_test, y_test) = cifar100.load_data(label_mode='fine')
-# 
-# X_train = x_train.reshape(x_train.shape[0],-1)
-# X_test  = x_test.reshape(x_test.shape[0],-1)
-# y_train = y_train.reshape(y_train.shape[0])
-# y_test = y_test.reshape(y_test.shape[0])
-# 
-# w,b = get_linear_classifier(X_train,y_train,range(100)) 
-# 
-# acc  = test_model(w,b,X_train,y_train)
-# print("[INFO] train accuracy = {:0.4f}".format(acc))
-# 
-# acc  = test_model(w,b,X_test,y_test)
-# print("[INFO] test accuracy = {:0.4f}".format(acc))
-# #"""
-# 

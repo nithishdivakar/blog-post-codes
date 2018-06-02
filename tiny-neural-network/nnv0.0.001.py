@@ -68,38 +68,41 @@ def init_params():
   THETA['b3'] = param_initializer((10,))
   return THETA
 
-def forward_pass(x_b,y_b,Q):
-  P = {}
-  P['a0'] = x_b
-  P['z1'] = bias_add(matmul(P['a0'],Q['W1']), Q['b1'])
-  P['a1'] = relu(P['z1'])
+def forward_pass(x_b,y_b,PARAMS):
+  ACTS = {}
 
-  P['z2'] = bias_add(matmul(P['a1'],Q['W2']), Q['b2'])
-  P['a2'] = relu(P['z2'])
-  
-  P['z3'] = bias_add(matmul(P['a2'],Q['W3']), Q['b3'])
-  P['s']  = softmax(P['z3'])
-  
-  P['y']  = y_b
-  P['L']  = log_loss(y_true=P['y'], y_pred=P['s'])
-  return P
+  ACTS['a0'] = x_b
+  ACTS['z1'] = bias_add(matmul(ACTS['a0'],PARAMS['W1']), PARAMS['b1'])
+  ACTS['a1'] = relu(ACTS['z1'])
 
-def backward_pass(ACTIVATIONS,PARAMS):
+  ACTS['z2'] = bias_add(matmul(ACTS['a1'],PARAMS['W2']), PARAMS['b2'])
+  ACTS['a2'] = relu(ACTS['z2'])
+  
+  ACTS['z3'] = bias_add(matmul(ACTS['a2'],PARAMS['W3']), PARAMS['b3'])
+  ACTS['s']  = softmax(ACTS['z3'])
+  
+  ACTS['y']  = y_b
+  ACTS['L']  = log_loss(y_true=ACTS['y'], y_pred=ACTS['s'])
+
+  return ACTS
+
+
+def backward_pass(ACTS,PARAMS):
   
   GRAD = {}
-  B = ACTIVATIONS['a0'].shape[0]
+  B = ACTS['a0'].shape[0]
   
      
   dz3_da2 = PARAMS['W3']
-  da2_dz2 = relu_derv(ACTIVATIONS['z2'])
-  dz2_dW2 = ACTIVATIONS['a1']
+  da2_dz2 = relu_derv(ACTS['z2'])
+  dz2_dW2 = ACTS['a1']
   
   dz2_da1 = PARAMS['W2']
-  da1_dz1 = relu_derv(ACTIVATIONS['z1'])
-  dz1_dW1 = ACTIVATIONS['a0']
+  da1_dz1 = relu_derv(ACTS['z1'])
+  dz1_dW1 = ACTS['a0']
   
    
-  dl_dz3  = (ACTIVATIONS['s']-ACTIVATIONS['y'])
+  dl_dz3  = (ACTS['s']-ACTS['y'])
   dl_da2  = np.dot(dl_dz3,dz3_da2)
   dl_dz2  = np.multiply(dl_da2,da2_dz2)
   
@@ -107,13 +110,13 @@ def backward_pass(ACTIVATIONS,PARAMS):
   dl_dz1  = np.multiply(dl_da1,da1_dz1)
   
   
-  dl_dW3 = (1/B)*np.dot(dl_dz3.T,ACTIVATIONS['a2'])
+  dl_dW3 = (1/B)*np.dot(dl_dz3.T,ACTS['a2'])
   dl_db3 = (1/B)*dl_dz3.sum(axis=0)
   
-  dl_dW2 = (1/B)*np.dot(dl_dz2.T,ACTIVATIONS['a1'])
+  dl_dW2 = (1/B)*np.dot(dl_dz2.T,ACTS['a1'])
   dl_db2 = (1/B)*dl_dz2.sum(axis=0)
   
-  dl_dW1 = (1/B)*np.dot(dl_dz1.T,ACTIVATIONS['a0'])
+  dl_dW1 = (1/B)*np.dot(dl_dz1.T,ACTS['a0'])
   dl_db1 = (1/B)*dl_dz1.sum(axis=0)
   
 
@@ -152,19 +155,23 @@ Y_test  = class_to_one_hot(y_test.reshape(y_test.shape[0]))
 get_batch = get_next_batch(X_train, Y_train, batch_size=B)
 LOSS = []
 
-Q = init_params()
+
+PARAMS = init_params()
 for idx in range(10000):
   x_b,y_b = next(get_batch)
-  P = forward_pass(x_b,y_b,Q)
-  LOSS.append(P['L'])
-  GRAD = backward_pass(P,Q)
-  
-  Q['W3'] = Q['W3'] - lr*GRAD['dl_dW3']
-  Q['b3'] = Q['b3'] - lr*GRAD['dl_db3']
-  Q['W2'] = Q['W2'] - lr*GRAD['dl_dW2']
-  Q['b2'] = Q['b2'] - lr*GRAD['dl_db2']
-  Q['W1'] = Q['W1'] - lr*GRAD['dl_dW1']
-  Q['b1'] = Q['b1'] - lr*GRAD['dl_db1']
+  ACTS    = forward_pass(x_b,y_b,PARAMS)
+  GRAD    = backward_pass(ACTS,PARAMS)
+
+  ## gradient updates  
+  PARAMS['W3'] = PARAMS['W3'] - lr*GRAD['dl_dW3']
+  PARAMS['b3'] = PARAMS['b3'] - lr*GRAD['dl_db3']
+  PARAMS['W2'] = PARAMS['W2'] - lr*GRAD['dl_dW2']
+  PARAMS['b2'] = PARAMS['b2'] - lr*GRAD['dl_db2']
+  PARAMS['W1'] = PARAMS['W1'] - lr*GRAD['dl_dW1']
+  PARAMS['b1'] = PARAMS['b1'] - lr*GRAD['dl_db1']
+
+  LOSS.append(ACTS['L'])
+
   if idx%100==0:
       print("#",end ='')
 plt.figure()
@@ -179,9 +186,9 @@ def test_accuracy(y,s):
 
 
 
-Test_P = forward_pass(X_test,Y_test,Q)
+Test_ACT = forward_pass(X_test,Y_test,PARAMS)
 
-print("Test accuracy", test_accuracy(Y_test,Test_P['s']))
+print("Test accuracy", test_accuracy(Y_test,Test_ACT['s']))
 
 
 f = open("loss.txt","w")

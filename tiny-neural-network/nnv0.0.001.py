@@ -84,22 +84,22 @@ def forward_pass(x_b,y_b,Q):
   P['L']  = log_loss(y_true=P['y'], y_pred=P['s'])
   return P
 
-def backward_pass(P,Q):
+def backward_pass(ACTIVATIONS,PARAMS):
   
   GRAD = {}
-  B = P['a0'].shape[0]
+  B = ACTIVATIONS['a0'].shape[0]
   
      
-  dz3_da2 = Q['W3']
-  da2_dz2 = relu_derv(P['z2'])
-  dz2_dW2 = P['a1']
+  dz3_da2 = PARAMS['W3']
+  da2_dz2 = relu_derv(ACTIVATIONS['z2'])
+  dz2_dW2 = ACTIVATIONS['a1']
   
-  dz2_da1 = Q['W2']
-  da1_dz1 = relu_derv(P['z1'])
-  dz1_dW1 = P['a0']
+  dz2_da1 = PARAMS['W2']
+  da1_dz1 = relu_derv(ACTIVATIONS['z1'])
+  dz1_dW1 = ACTIVATIONS['a0']
   
    
-  dl_dz3  = (P['s']-P['y'])
+  dl_dz3  = (ACTIVATIONS['s']-ACTIVATIONS['y'])
   dl_da2  = np.dot(dl_dz3,dz3_da2)
   dl_dz2  = np.multiply(dl_da2,da2_dz2)
   
@@ -107,13 +107,13 @@ def backward_pass(P,Q):
   dl_dz1  = np.multiply(dl_da1,da1_dz1)
   
   
-  dl_dW3 = (1/B)*np.dot(dl_dz3.T,P['a2'])
+  dl_dW3 = (1/B)*np.dot(dl_dz3.T,ACTIVATIONS['a2'])
   dl_db3 = (1/B)*dl_dz3.sum(axis=0)
   
-  dl_dW2 = (1/B)*np.dot(dl_dz2.T,P['a1'])
+  dl_dW2 = (1/B)*np.dot(dl_dz2.T,ACTIVATIONS['a1'])
   dl_db2 = (1/B)*dl_dz2.sum(axis=0)
   
-  dl_dW1 = (1/B)*np.dot(dl_dz1.T,P['a0'])
+  dl_dW1 = (1/B)*np.dot(dl_dz1.T,ACTIVATIONS['a0'])
   dl_db1 = (1/B)*dl_dz1.sum(axis=0)
   
 

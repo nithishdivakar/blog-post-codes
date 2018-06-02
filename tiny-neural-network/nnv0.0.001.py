@@ -153,7 +153,7 @@ get_batch = get_next_batch(X_train, Y_train, batch_size=B)
 LOSS = []
 
 Q = init_params()
-for idx in range(5000):
+for idx in range(10000):
   x_b,y_b = next(get_batch)
   P = forward_pass(x_b,y_b,Q)
   LOSS.append(P['L'])
@@ -170,3 +170,31 @@ for idx in range(5000):
 plt.figure()
 plt.plot(LOSS)
 plt.savefig("loss.png")
+
+
+def test_accuracy(y,s):
+  y_true = np.argmax(y,axis=1)
+  y_pred = np.argmax(s,axis=1)
+  return (y_true==y_pred).sum()/y_true.shape[0]
+
+
+
+Test_P = forward_pass(X_test,Y_test,Q)
+
+print("Test accuracy", test_accuracy(Y_test,Test_P['s']))
+
+
+f = open("loss.txt","w")
+idx = 1
+for l in LOSS:
+  f.write("({},{})\n".format(idx,l))
+  idx+=1
+f.close()
+
+f = open("avg_loss.txt","w")
+offset = 100
+idx = offset
+for l in LOSS[offset:]:
+  f.write("({},{})\n".format(idx,np.mean(LOSS[idx-offset:idx])))
+  idx+=1
+f.close()
